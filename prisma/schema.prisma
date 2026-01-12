@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  TRAINER
+  TRAINEE
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  traineeProfile   Trainee?
+  trainerProfile   Trainer?
+  createdSchedules ClassSchedule[] @relation("AdminSchedules")
+
+  @@map("users")
+}
+
+model Trainer {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @unique @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  specialization String?
+  experience     Int? // years of experience
+  bio            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  assignedSchedules ClassSchedule[]
+
+  @@map("trainers")
+}
+
+model Trainee {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @unique @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  age Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  bookings Booking[]
+
+  @@map("trainees")
+}
+
+model ClassSchedule {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  className String
+  date      DateTime
+  startTime String // e.g., "10:00"
+  endTime   String // e.g., "12:00"
+
+  trainerId String  @db.ObjectId
+  trainer   Trainer @relation(fields: [trainerId], references: [id])
+
+  adminId String @db.ObjectId
+  admin   User   @relation("AdminSchedules", fields: [adminId], references: [id])
+
+  maxTrainees Int @default(10)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  bookings Booking[]
+
+  @@map("class_schedules")
+}
+
+model Booking {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  traineeId String  @db.ObjectId
+  trainee   Trainee @relation(fields: [traineeId], references: [id], onDelete: Cascade)
+
+  scheduleId String        @db.ObjectId
+  schedule   ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  bookedAt    DateTime  @default(now())
+  cancelledAt DateTime?
+
+  @@unique([traineeId, scheduleId])
+  @@map("bookings")
+}
