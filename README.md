@@ -86,65 +86,83 @@ model Booking {
   cancelledAt       DateTime?
   @@unique([traineeId, scheduleId])
 }
-🛠️ Technology Stack
+## 🛠️ Technology Stack
 
-Language: TypeScript
+- **Language:** TypeScript  
+- **Runtime:** Node.js  
+- **Framework:** Express.js  
+- **Database:** MongoDB (Atlas)  
+- **ORM:** Prisma  
+- **Authentication:** JWT (JSON Web Tokens)  
+- **Password Hashing:** bcryptjs  
+- **Validation:** express-validator  
+- **Deployment:** Vercel  
+- **Architecture:** Modular Pattern  
 
-Runtime: Node.js
+---
 
-Framework: Express.js
+## 🔐 Admin Credentials (Testing)
 
-Database: MongoDB (Atlas)
+Use the following credentials to test admin-level features:
 
-ORM: Prisma
+Email: `admin@gym.com`  
+Password: `admin123`
 
-Authentication: JWT (JSON Web Tokens)
+---
 
-Password Hashing: bcryptjs
+## 📡 API Endpoints
 
-Validation: express-validator
+### 🔑 Authentication Routes (Public)
 
-Deployment: Vercel
+- `POST /api/auth/login` → Login (all roles)  
+- `POST /api/auth/register` → Trainee self-registration  
 
-Architecture: Modular Pattern
+---
 
-🔐 Admin Credentials (Testing)
-Email: admin@gym.com
-Password: admin123
+### 👤 User Management Routes (ADMIN only)
 
-📡 API Endpoints
-🔑 Authentication Routes (Public)
-Method	Endpoint	Description
-POST	/api/auth/login	Login (all roles)
-POST	/api/auth/register	Trainee self-registration
-👤 User Management (ADMIN only)
-Method	Endpoint	Description
-POST	/api/users/create	Create Trainer / Trainee
-GET	/api/users	Get all users
-🧍 Trainee Routes (TRAINEE only)
-Method	Endpoint	Description
-GET	/api/trainees/profile	Get own profile
-PUT	/api/trainees/profile	Update own profile
-🧑‍🏫 Trainer Routes (TRAINER only)
-Method	Endpoint	Description
-GET	/api/trainers/profile	Get own profile
-PUT	/api/trainers/profile	Update own profile
-GET	/api/trainers/schedules	View assigned schedules
-📅 Schedule Routes (ADMIN only)
-Method	Endpoint	Description
-POST	/api/schedules/create	Create class schedule
-GET	/api/schedules	Get all schedules
-GET	/api/schedules/:id	Get schedule by ID
-📝 Booking Routes (TRAINEE only)
-Method	Endpoint	Description
-POST	/api/bookings/book	Book a class
-GET	/api/bookings/my-bookings	View own bookings
-DELETE	/api/bookings/:id	Cancel booking
-🔄 API Request & Response Examples
-1️⃣ Login
+- `POST /api/users/create` → Create Trainer or Trainee  
+- `GET /api/users` → Get all users  
 
-Request
+---
 
+### 🧍 Trainee Routes (TRAINEE only)
+
+- `GET /api/trainees/profile` → Get own profile  
+- `PUT /api/trainees/profile` → Update own profile  
+
+---
+
+### 🧑‍🏫 Trainer Routes (TRAINER only)
+
+- `GET /api/trainers/profile` → Get own profile  
+- `PUT /api/trainers/profile` → Update own profile  
+- `GET /api/trainers/schedules` → View assigned schedules  
+
+---
+
+### 📅 Schedule Routes (ADMIN only)
+
+- `POST /api/schedules/create` → Create class schedule  
+- `GET /api/schedules` → Get all schedules  
+- `GET /api/schedules/:id` → Get schedule by ID  
+
+---
+
+### 📝 Booking Routes (TRAINEE only)
+
+- `POST /api/bookings/book` → Book a class  
+- `GET /api/bookings/my-bookings` → View own bookings  
+- `DELETE /api/bookings/:id` → Cancel booking  
+
+---
+
+## 🔄 API Request & Response Example
+
+### Login
+
+**Request**
+```http
 POST /api/auth/login
 Content-Type: application/json
 
@@ -152,10 +170,6 @@ Content-Type: application/json
   "email": "admin@gym.com",
   "password": "admin123"
 }
-
-
-Response
-
 {
   "success": true,
   "statusCode": 200,
@@ -171,24 +185,21 @@ Response
   }
 }
 
-▶️ Running Locally
+## ▶️ Running Locally
+
 Prerequisites
-
-Node.js (v18+)
-
-MongoDB Atlas / Local MongoDB
-
+Node.js (v18 or higher)
+MongoDB Atlas or local MongoDB
 Git
 
 Installation
 git clone https://github.com/AMLAN1000/gym-class-management.git
+
 cd gym-class-management
 npm install
 
-Environment Setup
-
-Create a .env file:
-
+## Environment Setup
+Create a .env file in the root directory and add:
 NODE_ENV=development
 PORT=5000
 DATABASE_URL=your_mongodb_connection_string
@@ -196,7 +207,7 @@ JWT_SECRET=your-super-secret-jwt-key
 JWT_EXPIRES_IN=7d
 BCRYPT_SALT_ROUNDS=12
 
-Database Setup
+## Database Setup
 npx prisma generate
 npx prisma db push
 npm run prisma:seed
@@ -204,35 +215,29 @@ npm run prisma:seed
 Start Server
 npm run dev
 
+Server will run at: http://localhost:5000
 
-Server runs at:
-👉 http://localhost:5000
+## Business Rules Implemented
 
-📜 Business Rules Implemented
-
-Max 5 class schedules per day
-
-Max 10 trainees per class
-
+Maximum 5 class schedules per day
+Maximum 10 trainees per class
 Fixed 2-hour class duration
-
 Prevents double booking
+Role-based access control using JWT
+Secure password storage using bcrypt
 
-Role-based access control
+## Project Structure
 
-Secure password hashing (bcrypt)
-
-📂 Project Structure
 gym-class-management/
 ├── prisma/
 ├── src/
-│   ├── config/
-│   ├── middlewares/
-│   ├── modules/
-│   ├── utils/
-│   ├── types/
-│   ├── app.ts
-│   └── server.ts
+│ ├── config/
+│ ├── middlewares/
+│ ├── modules/
+│ ├── utils/
+│ ├── types/
+│ ├── app.ts
+│ └── server.ts
 ├── .env
 ├── package.json
 ├── tsconfig.json
