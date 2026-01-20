@@ -6,7 +6,7 @@
  * - No time conflicts for trainees
  * - Booking cancellation
  *
- * 🔒 RACE CONDITION FIX: Uses atomic counter with MongoDB
+ *
  */
 import { PrismaClient } from "@prisma/client";
 import ApiError from "../../utils/ApiError";
@@ -39,7 +39,6 @@ const doTimesOverlap = (
 /**
  * Create a new booking
  *
- * 🔒 MongoDB atomic solution using updateMany with conditions
  */
 const createBooking = async (
   userId: string,
@@ -126,25 +125,24 @@ const createBooking = async (
     );
   }
 
-  // 🔒 CRITICAL: Atomic increment with condition check
   // This will ONLY increment if activeBookingsCount < maxTrainees
   const incrementResult = await prisma.classSchedule.updateMany({
     where: {
       id: scheduleId,
       activeBookingsCount: {
-        lt: schedule.maxTrainees, // 🔒 Only update if under limit
+        lt: schedule.maxTrainees, //  Only update if under limit
       },
     },
     data: {
       activeBookingsCount: {
-        increment: 1, // 🔒 Atomic increment
+        increment: 1, //  Atomic increment
       },
     },
   });
 
   console.log(`📊 Schedule: ${schedule.className}`);
   console.log(
-    `🔒 Atomic increment result: ${incrementResult.count} row(s) updated`,
+    ` Atomic increment result: ${incrementResult.count} row(s) updated`,
   );
 
   // If no rows were updated, the class is full
@@ -191,10 +189,10 @@ const createBooking = async (
     });
 
     console.log(
-      `✅ Booking created! Active bookings: ${schedule.activeBookingsCount + 1}/${schedule.maxTrainees}`,
+      ` Booking created! Active bookings: ${schedule.activeBookingsCount + 1}/${schedule.maxTrainees}`,
     );
   } catch (error) {
-    // 🔒 ROLLBACK: If booking creation fails, decrement the counter
+    //  ROLLBACK: If booking creation fails, decrement the counter
     await prisma.classSchedule.update({
       where: { id: scheduleId },
       data: {
@@ -322,7 +320,7 @@ const cancelBooking = async (
     },
   });
 
-  // 🔒 Decrement the active bookings counter
+  //  Decrement the active bookings counter
   await prisma.classSchedule.update({
     where: { id: booking.scheduleId },
     data: {

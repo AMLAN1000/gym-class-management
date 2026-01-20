@@ -45,7 +45,7 @@ const getMyProfile = async (userId: string): Promise<ITrainerProfile> => {
  */
 const updateMyProfile = async (
   userId: string,
-  payload: IUpdateTrainerProfile
+  payload: IUpdateTrainerProfile,
 ): Promise<ITrainerProfile> => {
   const { specialization, experience, bio, phone, name } = payload;
 

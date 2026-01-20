@@ -32,7 +32,7 @@ router.post(
   authorize(UserRole.ADMIN),
   createScheduleValidation,
   validate,
-  ScheduleController.createSchedule
+  ScheduleController.createSchedule,
 );
 
 /**
@@ -45,7 +45,7 @@ router.get(
   authenticate,
   getSchedulesValidation,
   validate,
-  ScheduleController.getAllSchedules
+  ScheduleController.getAllSchedules,
 );
 
 /**
@@ -62,7 +62,7 @@ router.delete(
   "/:id",
   authenticate,
   authorize(UserRole.ADMIN),
-  ScheduleController.deleteSchedule
+  ScheduleController.deleteSchedule,
 );
 
 export const ScheduleRoutes = router;

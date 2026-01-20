@@ -28,7 +28,7 @@ const prisma = new PrismaClient();
  */
 const createSchedule = async (
   adminId: string,
-  payload: ICreateScheduleRequest
+  payload: ICreateScheduleRequest,
 ): Promise<IScheduleResponse> => {
   const { className, date, startTime, endTime, trainerId } = payload;
 
@@ -53,7 +53,7 @@ const createSchedule = async (
   if (schedulesOnDate >= 5) {
     throw new ApiError(
       400,
-      "Schedule limit reached. Maximum 5 schedules allowed per day."
+      "Schedule limit reached. Maximum 5 schedules allowed per day.",
     );
   }
 
@@ -77,7 +77,7 @@ const createSchedule = async (
   if (durationMinutes !== 120) {
     throw new ApiError(
       400,
-      "Invalid class duration. Each class must be exactly 2 hours."
+      "Invalid class duration. Each class must be exactly 2 hours.",
     );
   }
 
@@ -112,7 +112,7 @@ const createSchedule = async (
   if (overlappingSchedule) {
     throw new ApiError(
       400,
-      "Trainer already has a class scheduled during this time slot."
+      "Trainer already has a class scheduled during this time slot.",
     );
   }
 
@@ -154,7 +154,7 @@ const createSchedule = async (
  * Get all schedules with optional filters
  */
 const getAllSchedules = async (
-  filters: IScheduleFilters
+  filters: IScheduleFilters,
 ): Promise<IScheduleResponse[]> => {
   const { date, trainerId } = filters;
 
@@ -210,7 +210,7 @@ const getAllSchedules = async (
  * Get schedule by ID
  */
 const getScheduleById = async (
-  scheduleId: string
+  scheduleId: string,
 ): Promise<IScheduleResponse> => {
   const schedule = await prisma.classSchedule.findUnique({
     where: { id: scheduleId },
@@ -273,7 +273,7 @@ const deleteSchedule = async (scheduleId: string): Promise<void> => {
   if (schedule.bookings.length > 0) {
     throw new ApiError(
       400,
-      "Cannot delete schedule with active bookings. Please cancel all bookings first."
+      "Cannot delete schedule with active bookings. Please cancel all bookings first.",
     );
   }
 

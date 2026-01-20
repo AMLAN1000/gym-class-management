@@ -35,7 +35,7 @@ router.put(
   "/profile",
   updateTrainerValidation,
   validate,
-  TrainerController.updateMyProfile
+  TrainerController.updateMyProfile,
 );
 
 /**

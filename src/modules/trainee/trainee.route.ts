@@ -35,7 +35,7 @@ router.put(
   "/profile",
   updateTraineeValidation,
   validate,
-  TraineeController.updateMyProfile
+  TraineeController.updateMyProfile,
 );
 
 export const TraineeRoutes = router;

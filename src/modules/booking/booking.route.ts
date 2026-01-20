@@ -28,7 +28,7 @@ router.post(
   authorize(UserRole.TRAINEE),
   createBookingValidation,
   validate,
-  BookingController.createBooking
+  BookingController.createBooking,
 );
 
 /**
@@ -39,7 +39,7 @@ router.get(
   "/my-bookings",
   authenticate,
   authorize(UserRole.TRAINEE),
-  BookingController.getMyBookings
+  BookingController.getMyBookings,
 );
 
 /**
@@ -50,7 +50,7 @@ router.delete(
   "/:id",
   authenticate,
   authorize(UserRole.TRAINEE),
-  BookingController.cancelBooking
+  BookingController.cancelBooking,
 );
 
 /**
@@ -61,7 +61,7 @@ router.get(
   "/",
   authenticate,
   authorize(UserRole.ADMIN),
-  BookingController.getAllBookings
+  BookingController.getAllBookings,
 );
 
 export const BookingRoutes = router;

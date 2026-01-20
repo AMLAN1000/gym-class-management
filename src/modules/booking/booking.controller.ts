@@ -1,13 +1,13 @@
 /**
  * BOOKING MODULE - HTTP REQUEST HANDLER
- * 
+ *
  * Handles incoming HTTP requests for booking operations
  */
 
-import { Request, Response } from 'express';
-import asyncHandler from '../../utils/asyncHandler';
-import ApiResponse from '../../utils/ApiResponse';
-import { BookingService } from './booking.service';
+import { Request, Response } from "express";
+import asyncHandler from "../../utils/asyncHandler";
+import ApiResponse from "../../utils/ApiResponse";
+import { BookingService } from "./booking.service";
 
 /**
  * POST /api/bookings/book
@@ -19,7 +19,7 @@ const createBooking = asyncHandler(async (req: Request, res: Response) => {
 
   res
     .status(201)
-    .json(new ApiResponse(201, result, 'Class booked successfully'));
+    .json(new ApiResponse(201, result, "Class booked successfully"));
 });
 
 /**
@@ -32,7 +32,7 @@ const getMyBookings = asyncHandler(async (req: Request, res: Response) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, result, 'Bookings retrieved successfully'));
+    .json(new ApiResponse(200, result, "Bookings retrieved successfully"));
 });
 
 /**
@@ -46,19 +46,19 @@ const cancelBooking = asyncHandler(async (req: Request, res: Response) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, result, 'Booking cancelled successfully'));
+    .json(new ApiResponse(200, result, "Booking cancelled successfully"));
 });
 
 //get/api/bookings admin see all bookings
 const getAllBookings = asyncHandler(async (req: Request, res: Response) => {
-const result = await BookingService.getAllBookings();
-res
-.status(200)
-.json(new ApiResponse(200, result, 'Bookings retrieved successfully'));
+  const result = await BookingService.getAllBookings();
+  res
+    .status(200)
+    .json(new ApiResponse(200, result, "Bookings retrieved successfully"));
 });
 export const BookingController = {
-createBooking,
-getMyBookings,
-cancelBooking,
-getAllBookings,
+  createBooking,
+  getMyBookings,
+  cancelBooking,
+  getAllBookings,
 };

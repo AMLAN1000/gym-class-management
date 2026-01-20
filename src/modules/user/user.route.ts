@@ -14,14 +14,14 @@ router.post(
   authorize(UserRole.ADMIN),
   createUserValidation,
   validate,
-  UserController.createUser
+  UserController.createUser,
 );
 
 router.get(
   "/",
   authenticate,
   authorize(UserRole.ADMIN),
-  UserController.getAllUsers
+  UserController.getAllUsers,
 );
 
 export const UserRoutes = router;
