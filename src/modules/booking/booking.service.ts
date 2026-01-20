@@ -1,10 +1,12 @@
 /**
- * BOOKING MODULE - BUSINESS LOGIC LAYER
+ * BOOKING MODULE - BUSINESS LOGIC LAYER (MongoDB Optimized)
  *
  * Handles booking operations with business rules:
  * - Max 10 trainees per schedule
  * - No time conflicts for trainees
  * - Booking cancellation
+ *
+ * 🔒 RACE CONDITION FIX: Uses atomic counter with MongoDB
  */
 import { PrismaClient } from "@prisma/client";
 import ApiError from "../../utils/ApiError";
@@ -14,13 +16,12 @@ const prisma = new PrismaClient();
 
 /**
  * Helper function to check if two time ranges overlap
- * Returns true if they overlap, false if they don't
  */
 const doTimesOverlap = (
   start1: string,
   end1: string,
   start2: string,
-  end2: string
+  end2: string,
 ): boolean => {
   const [h1, m1] = start1.split(":").map(Number);
   const [h2, m2] = end1.split(":").map(Number);
@@ -32,26 +33,17 @@ const doTimesOverlap = (
   const start2Minutes = h3 * 60 + m3;
   const end2Minutes = h4 * 60 + m4;
 
-  // Two time ranges overlap if:
-  // start1 < end2 AND start2 < end1
-  // Examples:
-  // 08:00-10:00 and 10:00-12:00 => 480 < 720 AND 600 < 600 => TRUE AND FALSE => NO OVERLAP ✓
-  // 08:00-10:00 and 09:00-11:00 => 480 < 660 AND 540 < 600 => TRUE AND TRUE => OVERLAP ✓
-  // 10:00-12:00 and 11:00-13:00 => 600 < 780 AND 660 < 720 => TRUE AND TRUE => OVERLAP ✓
   return start1Minutes < end2Minutes && start2Minutes < end1Minutes;
 };
 
 /**
  * Create a new booking
  *
- * BUSINESS RULES:
- * 1. Max 10 trainees per schedule
- * 2. Trainee cannot book multiple classes in the same time slot
- * 3. Trainee cannot book the same schedule twice
+ * 🔒 MongoDB atomic solution using updateMany with conditions
  */
 const createBooking = async (
   userId: string,
-  payload: ICreateBookingRequest
+  payload: ICreateBookingRequest,
 ): Promise<IBookingResponse> => {
   const { scheduleId } = payload;
 
@@ -67,24 +59,10 @@ const createBooking = async (
   // Get schedule details
   const schedule = await prisma.classSchedule.findUnique({
     where: { id: scheduleId },
-    include: {
-      bookings: {
-        where: { cancelledAt: null },
-      },
-    },
   });
 
   if (!schedule) {
     throw new ApiError(404, "Schedule not found.");
-  }
-
-  // BUSINESS RULE 1: Check max 10 trainees per schedule
-  const activeBookings = schedule.bookings.length;
-  if (activeBookings >= schedule.maxTrainees) {
-    throw new ApiError(
-      400,
-      "Class schedule is full. Maximum 10 trainees allowed per schedule."
-    );
   }
 
   // BUSINESS RULE 2: Check if trainee already booked this schedule
@@ -104,11 +82,11 @@ const createBooking = async (
   const scheduleDate = new Date(schedule.date);
   const startOfDay = new Date(scheduleDate);
   startOfDay.setHours(0, 0, 0, 0);
+
   const endOfDay = new Date(scheduleDate);
   endOfDay.setHours(23, 59, 59, 999);
 
-  // Get all trainee's bookings on the same day
-  const traineeBookingsOnDate = await prisma.booking.findMany({
+  const conflictingBooking = await prisma.booking.findFirst({
     where: {
       traineeId: trainee.id,
       cancelledAt: null,
@@ -117,62 +95,116 @@ const createBooking = async (
           gte: startOfDay,
           lte: endOfDay,
         },
+        OR: [
+          {
+            AND: [
+              { startTime: { lte: schedule.startTime } },
+              { endTime: { gt: schedule.startTime } },
+            ],
+          },
+          {
+            AND: [
+              { startTime: { lt: schedule.endTime } },
+              { endTime: { gte: schedule.endTime } },
+            ],
+          },
+          {
+            AND: [
+              { startTime: { gte: schedule.startTime } },
+              { endTime: { lte: schedule.endTime } },
+            ],
+          },
+        ],
       },
-    },
-    include: {
-      schedule: true,
     },
   });
 
-  // Check if any existing booking overlaps with the new schedule
-  for (const booking of traineeBookingsOnDate) {
-    const hasConflict = doTimesOverlap(
-      booking.schedule.startTime,
-      booking.schedule.endTime,
-      schedule.startTime,
-      schedule.endTime
+  if (conflictingBooking) {
+    throw new ApiError(
+      400,
+      "You already have a class booked during this time slot.",
     );
-
-    if (hasConflict) {
-      throw new ApiError(
-        400,
-        "You already have a class booked during this time slot."
-      );
-    }
   }
 
-  // Create booking
-  const booking = await prisma.booking.create({
-    data: {
-      traineeId: trainee.id,
-      scheduleId,
+  // 🔒 CRITICAL: Atomic increment with condition check
+  // This will ONLY increment if activeBookingsCount < maxTrainees
+  const incrementResult = await prisma.classSchedule.updateMany({
+    where: {
+      id: scheduleId,
+      activeBookingsCount: {
+        lt: schedule.maxTrainees, // 🔒 Only update if under limit
+      },
     },
-    include: {
-      trainee: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true,
+    data: {
+      activeBookingsCount: {
+        increment: 1, // 🔒 Atomic increment
+      },
+    },
+  });
+
+  console.log(`📊 Schedule: ${schedule.className}`);
+  console.log(
+    `🔒 Atomic increment result: ${incrementResult.count} row(s) updated`,
+  );
+
+  // If no rows were updated, the class is full
+  if (incrementResult.count === 0) {
+    throw new ApiError(
+      400,
+      `Class schedule is full. Maximum ${schedule.maxTrainees} trainees allowed per schedule.`,
+    );
+  }
+
+  // Create the booking
+  let booking;
+  try {
+    booking = await prisma.booking.create({
+      data: {
+        traineeId: trainee.id,
+        scheduleId,
+      },
+      include: {
+        trainee: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
             },
           },
         },
-      },
-      schedule: {
-        include: {
-          trainer: {
-            include: {
-              user: {
-                select: {
-                  name: true,
+        schedule: {
+          include: {
+            trainer: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-  });
+    });
+
+    console.log(
+      `✅ Booking created! Active bookings: ${schedule.activeBookingsCount + 1}/${schedule.maxTrainees}`,
+    );
+  } catch (error) {
+    // 🔒 ROLLBACK: If booking creation fails, decrement the counter
+    await prisma.classSchedule.update({
+      where: { id: scheduleId },
+      data: {
+        activeBookingsCount: {
+          decrement: 1,
+        },
+      },
+    });
+    throw error;
+  }
 
   return booking as IBookingResponse;
 };
@@ -192,8 +224,6 @@ const getMyBookings = async (userId: string): Promise<IBookingResponse[]> => {
   const bookings = await prisma.booking.findMany({
     where: {
       traineeId: trainee.id,
-      // REMOVED: cancelledAt: null - This was filtering out cancelled bookings
-      // Show ALL bookings (both active and cancelled)
     },
     include: {
       trainee: {
@@ -233,7 +263,7 @@ const getMyBookings = async (userId: string): Promise<IBookingResponse[]> => {
  */
 const cancelBooking = async (
   userId: string,
-  bookingId: string
+  bookingId: string,
 ): Promise<IBookingResponse> => {
   const trainee = await prisma.trainee.findUnique({
     where: { userId },
@@ -259,6 +289,7 @@ const cancelBooking = async (
     throw new ApiError(400, "Booking is already cancelled.");
   }
 
+  // Cancel the booking and decrement the counter atomically
   const cancelledBooking = await prisma.booking.update({
     where: { id: bookingId },
     data: {
@@ -287,6 +318,16 @@ const cancelBooking = async (
             },
           },
         },
+      },
+    },
+  });
+
+  // 🔒 Decrement the active bookings counter
+  await prisma.classSchedule.update({
+    where: { id: booking.scheduleId },
+    data: {
+      activeBookingsCount: {
+        decrement: 1,
       },
     },
   });

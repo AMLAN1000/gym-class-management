@@ -78,7 +78,8 @@ model ClassSchedule {
   adminId String @db.ObjectId
   admin   User   @relation("AdminSchedules", fields: [adminId], references: [id])
 
-  maxTrainees Int @default(10)
+  maxTrainees         Int @default(10)
+  activeBookingsCount Int @default(0) // 🔒 NEW: Track active bookings
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

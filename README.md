@@ -86,6 +86,7 @@ model Booking {
   cancelledAt       DateTime?
   @@unique([traineeId, scheduleId])
 }
+
 ## 🛠️ Technology Stack
 
 - **Language:** TypeScript  
