@@ -19,9 +19,9 @@ async function main() {
     },
   });
 
-  console.log("✅ Admin created:", admin.email);
-  console.log("📧 Email: admin@gym.com");
-  console.log("🔑 Password: admin123");
+  console.log("Admin created:", admin.email);
+  console.log("Email: admin@gym.com");
+  console.log("Password: admin123");
 }
 
 main()
